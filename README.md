@@ -7,6 +7,13 @@ Sara | MSc Data Science | B.Tech Artificial Intelligence and Machine Learning
 This project builds a complete data engineering and machine learning pipeline for financial transaction data. It generates 50,000 synthetic transactions using the Faker library, ingests them into PySpark, runs a 7-stage ETL pipeline with data quality validation, engineers 21 features including window aggregates, trains an XGBoost risk-scoring model, runs SQL analytics queries with pandasql, and exports the enriched dataset for visualisation in Google Looker Studio.
 
 ---
+## Links
+
+- Looker Studio Dashboard: https://lookerstudio.google.com/reporting/b7d766bb-2a9b-47dd-a535-28b2a1906ee5
+- Google Colab Notebook: https://drive.google.com/file/d/1gRwLGuADXv-AZBn4rJOF9KkQRWplM3pN/view?usp=sharing
+- Dashboard of Project: https://sara-iqbal.github.io/financial-etl-pipeline/
+---
+
 
 ## Pipeline Performance
 
@@ -116,13 +123,6 @@ To deploy the Looker Studio dashboard:
 5. Build charts using `risk_score`, `risk_label`, `category`, `amount`, `is_fraud`
 6. Click Share → Anyone with link → Copy public URL
 
----
-
-## Links
-
-- Looker Studio Dashboard: https://lookerstudio.google.com/reporting/b7d766bb-2a9b-47dd-a535-28b2a1906ee5
-- Google Colab Notebook: https://drive.google.com/file/d/1gRwLGuADXv-AZBn4rJOF9KkQRWplM3pN/view?usp=sharing
-- Dashboard of Project: https://sara-iqbal.github.io/financial-etl-pipeline/
 ---
 
 ## About

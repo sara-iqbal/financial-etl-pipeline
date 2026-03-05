@@ -122,10 +122,9 @@ To deploy the Looker Studio dashboard:
 
 ## Links
 
-- GitHub Repository: update after uploading
-- Looker Studio Dashboard: update after deploying
-- Google Colab Notebook: update after uploading
-
+- Looker Studio Dashboard: https://lookerstudio.google.com/reporting/b7d766bb-2a9b-47dd-a535-28b2a1906ee5
+- Google Colab Notebook: https://drive.google.com/file/d/1gRwLGuADXv-AZBn4rJOF9KkQRWplM3pN/view?usp=sharing
+- Dashboard of Project: 
 ---
 
 ## About

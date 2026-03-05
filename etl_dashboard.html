@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETL Pipeline & Risk Scoring — Sara</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Fira+Code:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --teal:       #0d6e6e;
+  --teal-dark:  #094f4f;
+  --teal-light: #1a9090;
+  --teal-bg:    #e8f4f4;
+  --teal-pale:  #f0fafa;
+  --rust:       #c0452a;
+  --rust-bg:    #fdf0ed;
+  --amber:      #b87a1a;
+  --amber-bg:   #fdf6e8;
+  --slate:      #3d5a6e;
+  --slate-bg:   #eef3f7;
+  --white:      #ffffff;
+  --off-white:  #f8f9fb;
+  --bg:         #f4f6f8;
+  --border:     #e0e6ea;
+  --ink:        #1a2332;
+  --ink2:       #2d3d4f;
+  --ink3:       #5a6e80;
+  --ink4:       #8fa0b0;
+  --green:      #1a7a52;
+  --green-bg:   #e8f5ee;
+  --red:        #c0392b;
+  --red-bg:     #fdecea;
+  --shadow-sm:  0 1px 3px rgba(13,110,110,0.07), 0 1px 6px rgba(13,110,110,0.04);
+  --shadow-md:  0 4px 16px rgba(13,110,110,0.09), 0 2px 6px rgba(13,110,110,0.05);
+  --shadow-lg:  0 8px 32px rgba(13,110,110,0.11), 0 4px 12px rgba(13,110,110,0.06);
+  --r:          10px;
+  --r-sm:       6px;
+  --font-s: 'Libre Baskerville', Georgia, serif;
+  --font-b: 'Plus Jakarta Sans', sans-serif;
+  --font-m: 'Fira Code', monospace;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-b);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+/* ══ HEADER ══ */
+header {
+  background: linear-gradient(135deg, var(--teal-dark) 0%, var(--teal) 60%, var(--teal-light) 100%);
+  color: white;
+  padding: 0;
+  position: sticky; top:0; z-index:100;
+  box-shadow: 0 2px 20px rgba(9,79,79,0.35);
+}
+.hdr {
+  max-width:1180px; margin:0 auto; padding:14px 32px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.hdr-brand { display:flex; align-items:center; gap:14px; }
+.hdr-icon {
+  width:40px; height:40px; border-radius:10px;
+  background:rgba(255,255,255,0.15);
+  border:1px solid rgba(255,255,255,0.25);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; backdrop-filter:blur(8px);
+}
+.hdr-title { font-family:var(--font-s); font-size:19px; font-weight:700; color:white; }
+.hdr-sub { font-family:var(--font-m); font-size:10px; color:rgba(255,255,255,0.6); letter-spacing:1px; margin-top:1px; }
+.hdr-pills { display:flex; gap:8px; flex-wrap:wrap; }
+.hdr-pill {
+  font-family:var(--font-m); font-size:10px; letter-spacing:1px;
+  padding:4px 12px; border-radius:20px;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.22);
+  color:rgba(255,255,255,0.9);
+}
+
+/* ══ HERO ══ */
+.hero-bar {
+  background: linear-gradient(135deg, var(--teal-dark), var(--teal));
+  padding: 40px 0 56px;
+  position:relative; overflow:hidden;
+}
+.hero-bar::before {
+  content:'';
+  position:absolute; inset:0;
+  background-image: radial-gradient(circle at 80% 50%, rgba(255,255,255,0.04) 0%, transparent 60%),
+    repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255,255,255,0.025) 40px),
+    repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255,255,255,0.025) 40px);
+  pointer-events:none;
+}
+.hero-inner {
+  max-width:1180px; margin:0 auto; padding:0 32px;
+  display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:center;
+  position:relative; z-index:1;
+}
+@media(max-width:800px){ .hero-inner{grid-template-columns:1fr;} }
+.hero-kicker {
+  font-family:var(--font-m); font-size:10px; letter-spacing:3px;
+  color:rgba(255,255,255,0.55); text-transform:uppercase;
+  margin-bottom:14px;
+}
+.hero h1 {
+  font-family:var(--font-s);
+  font-size:clamp(28px,4vw,50px);
+  font-weight:700; color:white;
+  line-height:1.15; letter-spacing:-0.5px;
+  margin-bottom:16px;
+}
+.hero h1 em { font-style:italic; color:rgba(255,255,255,0.7); }
+.hero-desc {
+  font-size:14px; color:rgba(255,255,255,0.65);
+  line-height:1.75; max-width:420px; margin-bottom:24px;
+}
+.hero-links { display:flex; gap:10px; flex-wrap:wrap; }
+.hero-btn {
+  font-family:var(--font-m); font-size:10px; letter-spacing:1px;
+  padding:9px 20px; border-radius:var(--r-sm);
+  text-decoration:none; transition:all 0.2s;
+}
+.btn-white { background:white; color:var(--teal-dark); font-weight:600; }
+.btn-white:hover { background:var(--teal-pale); transform:translateY(-1px); }
+.btn-ghost {
+  background:rgba(255,255,255,0.1);
+  border:1px solid rgba(255,255,255,0.25); color:white;
+}
+.btn-ghost:hover { background:rgba(255,255,255,0.18); transform:translateY(-1px); }
+
+/* Terminal card */
+.terminal {
+  background:rgba(9,20,30,0.88);
+  border:1px solid rgba(255,255,255,0.12);
+  border-radius:var(--r);
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,0.4);
+}
+.terminal-bar {
+  background:rgba(255,255,255,0.06);
+  padding:10px 16px;
+  display:flex; align-items:center; gap:6px;
+  border-bottom:1px solid rgba(255,255,255,0.07);
+}
+.dot { width:10px;height:10px;border-radius:50%; }
+.dot-r{background:#ff5f57;} .dot-y{background:#ffbe2e;} .dot-g{background:#28c840;}
+.terminal-title { font-family:var(--font-m);font-size:10px;color:rgba(255,255,255,0.35);margin-left:8px;letter-spacing:1px; }
+.terminal-body { padding:18px 20px; font-family:var(--font-m); font-size:12px; line-height:1.8; }
+.t-comment  { color:#4a7a5a; }
+.t-keyword  { color:#56c5c5; }
+.t-string   { color:#e8a87c; }
+.t-number   { color:#a8d8a8; }
+.t-output   { color:rgba(255,255,255,0.55); margin-left:4px; }
+.t-success  { color:#28c840; }
+.t-prompt   { color:#56c5c5; margin-right:6px; }
+.t-line     { display:flex; margin-bottom:1px; }
+
+/* ══ WRAP ══ */
+.wrap { max-width:1180px; margin:0 auto; padding:0 32px; }
+
+/* ══ METRICS ══ */
+.metrics-strip {
+  display:grid; grid-template-columns:repeat(5,1fr);
+  gap:0;
+  background:white;
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  box-shadow:var(--shadow-md);
+  margin: -24px auto 0;
+  position:relative; z-index:10;
+}
+@media(max-width:800px){ .metrics-strip{grid-template-columns:repeat(3,1fr);} }
+.metric-cell {
+  padding:22px 18px;
+  border-right:1px solid var(--border);
+  text-align:center; position:relative;
+  transition:background 0.2s;
+}
+.metric-cell::before {
+  content:'';
+  position:absolute; top:0;left:0;right:0;height:3px;
+  border-radius:0;
+}
+.mc1::before{background:linear-gradient(90deg,var(--teal),var(--teal-light));}
+.mc2::before{background:linear-gradient(90deg,var(--green),#4ac875);}
+.mc3::before{background:linear-gradient(90deg,var(--amber),#d4a040);}
+.mc4::before{background:linear-gradient(90deg,var(--rust),#d4654a);}
+.mc5::before{background:linear-gradient(90deg,var(--slate),#5a7a8e);}
+.metric-cell:last-child{border-right:none;}
+.metric-cell:hover{background:var(--off-white);}
+.mc-icon{font-size:18px;margin-bottom:6px;display:block;}
+.mc-label{font-family:var(--font-m);font-size:9px;letter-spacing:1.5px;color:var(--ink3);text-transform:uppercase;margin-bottom:5px;}
+.mc-val{font-family:var(--font-s);font-size:26px;font-weight:700;color:var(--ink);line-height:1;}
+.mc-val.teal{color:var(--teal);}
+.mc-val.green{color:var(--green);}
+.mc-val.amber{color:var(--amber);}
+.mc-val.rust{color:var(--rust);}
+.mc-sub{font-size:11px;color:var(--ink3);margin-top:4px;}
+
+/* ══ SECTION ══ */
+.section { padding:44px 0 0; }
+.sec-head { display:flex;align-items:center;gap:12px;margin-bottom:22px; }
+.sec-head h2 { font-family:var(--font-s);font-size:24px;font-weight:700;color:var(--ink); }
+.sec-tag {
+  font-family:var(--font-m);font-size:9px;letter-spacing:1.5px;
+  padding:3px 10px;border-radius:20px;text-transform:uppercase;
+  background:var(--teal-bg);color:var(--teal-dark);
+}
+.divider{height:1px;background:var(--border);margin:44px 0 0;}
+
+/* ══ PIPELINE FLOW ══ */
+.pipeline-flow {
+  display:flex; align-items:stretch; gap:0;
+  background:white;
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  box-shadow:var(--shadow-sm);
+  margin-bottom:24px;
+}
+.pipe-step {
+  flex:1; padding:20px 14px; text-align:center;
+  border-right:1px solid var(--border);
+  position:relative; cursor:default;
+  transition:background 0.2s;
+}
+.pipe-step:last-child{border-right:none;}
+.pipe-step:hover{background:var(--teal-pale);}
+.pipe-step::after {
+  content:'→';
+  position:absolute; right:-10px; top:50%;
+  transform:translateY(-50%);
+  color:var(--teal); font-size:14px; font-weight:700;
+  z-index:2; background:white; padding:2px;
+}
+.pipe-step:last-child::after{display:none;}
+.pipe-icon{font-size:22px;margin-bottom:8px;display:block;}
+.pipe-name{font-family:var(--font-m);font-size:10px;letter-spacing:1px;color:var(--teal-dark);text-transform:uppercase;margin-bottom:4px;font-weight:600;}
+.pipe-desc{font-size:11px;color:var(--ink3);line-height:1.4;}
+.pipe-count{font-family:var(--font-m);font-size:10px;color:var(--teal);margin-top:6px;font-weight:600;}
+
+/* ══ GRID ══ */
+.two-col{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px;}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;}
+@media(max-width:860px){.two-col,.three-col{grid-template-columns:1fr;}}
+
+/* ══ CARD ══ */
+.card {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  box-shadow:var(--shadow-sm);
+  transition:box-shadow 0.2s;
+}
+.card:hover{box-shadow:var(--shadow-md);}
+.card-hdr{
+  padding:14px 20px;
+  background:var(--off-white);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-title{font-family:var(--font-s);font-size:15px;font-weight:700;color:var(--ink);}
+.card-tag{font-family:var(--font-m);font-size:9px;padding:3px 9px;border-radius:12px;letter-spacing:0.5px;}
+.ct-sql{background:var(--teal-bg);color:var(--teal-dark);}
+.ct-ml{background:var(--green-bg);color:var(--green);}
+.ct-etl{background:var(--amber-bg);color:var(--amber);}
+.card-body{padding:20px;}
+
+/* ══ SQL PANEL ══ */
+.sql-box {
+  background:#0d1117;
+  border-radius:var(--r-sm);
+  padding:16px 18px;
+  font-family:var(--font-m);font-size:12px;
+  line-height:1.8;margin-bottom:14px;
+}
+.sql-kw  {color:#56c5c5;}
+.sql-fn  {color:#e8a87c;}
+.sql-tbl {color:#a8d8a8;}
+.sql-str {color:#f0c070;}
+.sql-cmt {color:#4a7a5a;}
+
+/* SQL results table */
+.sql-table{width:100%;border-collapse:collapse;font-family:var(--font-m);font-size:11.5px;}
+.sql-table th{
+  padding:8px 12px;text-align:left;
+  font-size:9px;letter-spacing:1px;color:var(--ink3);
+  text-transform:uppercase;background:var(--off-white);
+  border-bottom:2px solid var(--border);
+}
+.sql-table td{padding:8px 12px;border-bottom:1px solid var(--border);color:var(--ink2);}
+.sql-table tr:hover td{background:var(--teal-pale);}
+.td-pos{color:var(--green);font-weight:600;}
+.td-neg{color:var(--red);font-weight:600;}
+.td-num{color:var(--teal);font-weight:600;}
+
+/* ══ CHART CANVAS ══ */
+.chart-wrap{padding:16px 20px;}
+canvas{width:100%;display:block;}
+
+/* ══ DQ CHECKS ══ */
+.dq-grid{display:flex;flex-direction:column;gap:8px;padding:4px 0;}
+.dq-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 14px;border-radius:var(--r-sm);
+  border:1px solid var(--border);
+  font-family:var(--font-m);font-size:12px;
+  background:var(--off-white);
+}
+.dq-name{color:var(--ink2);}
+.dq-pass{
+  background:var(--green-bg);color:var(--green);
+  padding:2px 10px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:0.5px;
+}
+.dq-fail{
+  background:var(--red-bg);color:var(--red);
+  padding:2px 10px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:0.5px;
+}
+
+/* ══ RISK SCORE ══ */
+.risk-gauge-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.risk-cell{
+  text-align:center;padding:18px 12px;
+  border-radius:var(--r-sm);border:1px solid var(--border);
+}
+.risk-cell.low   {background:#edf7f1;border-color:#c3e6d0;}
+.risk-cell.med   {background:#fdf6e8;border-color:#f5d99a;}
+.risk-cell.high  {background:#fdecea;border-color:#f5c6c1;}
+.risk-emoji{font-size:26px;margin-bottom:6px;display:block;}
+.risk-label{font-family:var(--font-m);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;}
+.risk-label.low{color:var(--green);}
+.risk-label.med{color:var(--amber);}
+.risk-label.high{color:var(--red);}
+.risk-pct{font-family:var(--font-s);font-size:28px;font-weight:700;}
+.risk-pct.low{color:var(--green);}
+.risk-pct.med{color:var(--amber);}
+.risk-pct.high{color:var(--red);}
+.risk-sub{font-size:11px;color:var(--ink3);margin-top:4px;}
+
+/* ══ FOOTER ══ */
+footer{
+  background:var(--teal-dark);
+  color:rgba(255,255,255,0.7);
+  padding:28px 0;
+  margin-top:56px;
+}
+.foot{
+  max-width:1180px;margin:0 auto;padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;
+}
+.foot-name{font-family:var(--font-s);font-size:18px;color:white;font-weight:700;}
+.foot-sub{font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px;}
+.foot-links{display:flex;gap:8px;}
+.foot-link{
+  font-family:var(--font-m);font-size:10px;letter-spacing:1px;
+  color:rgba(255,255,255,0.7);text-decoration:none;
+  padding:6px 14px;border-radius:6px;
+  border:1px solid rgba(255,255,255,0.15);
+  transition:all 0.15s;
+}
+.foot-link:hover{background:rgba(255,255,255,0.1);color:white;}
+
+/* Animations */
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.a1{animation:fadeUp 0.5s ease 0.0s both;}
+.a2{animation:fadeUp 0.5s ease 0.1s both;}
+.a3{animation:fadeUp 0.5s ease 0.2s both;}
+.a4{animation:fadeUp 0.5s ease 0.3s both;}
+.a5{animation:fadeUp 0.5s ease 0.4s both;}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header>
+  <div class="hdr">
+    <div class="hdr-brand">
+      <div class="hdr-icon">⚙️</div>
+      <div>
+        <div class="hdr-title">FinPipeline</div>
+        <div class="hdr-sub">pyspark · etl · risk scoring · sql</div>
+      </div>
+    </div>
+    <div class="hdr-pills">
+      <span class="hdr-pill">PySpark ETL</span>
+      <span class="hdr-pill">XGBoost Risk</span>
+      <span class="hdr-pill">SQL Analytics</span>
+    </div>
+  </div>
+</header>
+
+<!-- Hero -->
+<div class="hero-bar a1">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-kicker">Data Engineering · ML · Analytics</div>
+      <h1>End-to-End<br><em>Financial</em> Data<br>Pipeline</h1>
+      <p class="hero-desc">
+        50,000 synthetic transactions ingested via PySpark, cleaned through a
+        7-stage ETL pipeline, risk-scored with XGBoost, and analysed
+        with SQL. Results served via an interactive dashboard.
+      </p>
+      <div class="hero-links">
+        <a href="#" class="hero-btn btn-white">📓 Google Colab</a>
+        <a href="#" class="hero-btn btn-ghost">📊 Looker Studio</a>
+        <a href="#" class="hero-btn btn-ghost">⌨️ GitHub</a>
+      </div>
+    </div>
+    <div class="terminal">
+      <div class="terminal-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <span class="terminal-title">etl_pipeline.py</span>
+      </div>
+      <div class="terminal-body">
+        <div class="t-line"><span class="t-comment"># Initialise Spark session</span></div>
+        <div class="t-line"><span class="t-keyword">spark</span><span style="color:#aaa"> = SparkSession.builder \</span></div>
+        <div class="t-line"><span style="color:#aaa">&nbsp;&nbsp;.appName(</span><span class="t-string">'FinancialETL'</span><span style="color:#aaa">) \</span></div>
+        <div class="t-line"><span style="color:#aaa">&nbsp;&nbsp;.getOrCreate()</span></div>
+        <div class="t-line">&nbsp;</div>
+        <div class="t-line"><span class="t-comment"># Run ETL transforms</span></div>
+        <div class="t-line"><span class="t-keyword">sdf</span><span style="color:#aaa"> = ingest_raw(</span><span class="t-string">'transactions.csv'</span><span style="color:#aaa">)</span></div>
+        <div class="t-line"><span class="t-keyword">sdf</span><span style="color:#aaa"> = clean_amounts(sdf)</span></div>
+        <div class="t-line"><span class="t-keyword">sdf</span><span style="color:#aaa"> = engineer_features(sdf)</span></div>
+        <div class="t-line"><span class="t-keyword">sdf</span><span style="color:#aaa"> = run_dq_checks(sdf)</span></div>
+        <div class="t-line">&nbsp;</div>
+        <div class="t-line"><span class="t-success">✅ [EXTRACT] Raw rows : 50,000</span></div>
+        <div class="t-line"><span class="t-success">✅ [CLEAN]   Nulls fixed : 987</span></div>
+        <div class="t-line"><span class="t-success">✅ [LOAD]    Clean rows : 50,000</span></div>
+        <div class="t-line"><span class="t-success">✅ DQ checks : 5/5 PASSED</span></div>
+        <div class="t-line"><span class="t-success">✅ Risk model ROC-AUC : 0.947</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- Metrics strip (overlaps hero) -->
+  <div class="metrics-strip a2">
+    <div class="metric-cell mc1">
+      <span class="mc-icon">📦</span>
+      <div class="mc-label">Transactions</div>
+      <div class="mc-val teal">50K</div>
+      <div class="mc-sub">Synthetic records</div>
+    </div>
+    <div class="metric-cell mc2">
+      <span class="mc-icon">🎯</span>
+      <div class="mc-label">ROC-AUC</div>
+      <div class="mc-val green">0.947</div>
+      <div class="mc-sub">XGBoost risk model</div>
+    </div>
+    <div class="metric-cell mc3">
+      <span class="mc-icon">⚙️</span>
+      <div class="mc-label">ETL Stages</div>
+      <div class="mc-val amber">7</div>
+      <div class="mc-sub">PySpark transforms</div>
+    </div>
+    <div class="metric-cell mc4">
+      <span class="mc-icon">🚨</span>
+      <div class="mc-label">Fraud Rate</div>
+      <div class="mc-val rust">3.0%</div>
+      <div class="mc-sub">Realistic imbalance</div>
+    </div>
+    <div class="metric-cell mc5">
+      <span class="mc-icon">🔬</span>
+      <div class="mc-label">Features</div>
+      <div class="mc-val" style="color:var(--slate)">21</div>
+      <div class="mc-sub">Engineered signals</div>
+    </div>
+  </div>
+
+  <!-- Pipeline Flow -->
+  <section class="section a3">
+    <div class="sec-head">
+      <h2>ETL Pipeline Architecture</h2>
+      <span class="sec-tag">7 stages</span>
+    </div>
+    <div class="pipeline-flow">
+      <div class="pipe-step">
+        <span class="pipe-icon">🏭</span>
+        <div class="pipe-name">Generate</div>
+        <div class="pipe-desc">Faker synthetic data — 50K transactions, realistic distributions</div>
+        <div class="pipe-count">50,000 rows</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-icon">📥</span>
+        <div class="pipe-name">Ingest</div>
+        <div class="pipe-desc">PySpark read CSV with explicit schema into distributed DataFrame</div>
+        <div class="pipe-count">16 columns</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-icon">🧹</span>
+        <div class="pipe-name">Clean</div>
+        <div class="pipe-desc">Null imputation, negative amount handling, category standardisation</div>
+        <div class="pipe-count">987 fixed</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-icon">✅</span>
+        <div class="pipe-name">Validate</div>
+        <div class="pipe-desc">5 data quality checks — nulls, duplicates, ranges, categories</div>
+        <div class="pipe-count">5/5 passed</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-icon">⚗️</span>
+        <div class="pipe-name">Engineer</div>
+        <div class="pipe-desc">Window functions, time features, customer aggregates, risk flags</div>
+        <div class="pipe-count">21 features</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-icon">🤖</span>
+        <div class="pipe-name">Score</div>
+        <div class="pipe-desc">XGBoost risk model — outputs probability score per transaction</div>
+        <div class="pipe-count">AUC 0.947</div>
+      </div>
+      <div class="pipe-step">
+        <span class="pipe-icon">📤</span>
+        <div class="pipe-name">Export</div>
+        <div class="pipe-desc">CSV export for Looker Studio + pandasql business queries</div>
+        <div class="pipe-count">4 queries</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SQL + Charts -->
+  <section class="section a4">
+    <div class="sec-head">
+      <h2>SQL Analytics</h2>
+      <span class="sec-tag">pandasql · BigQuery-ready</span>
+    </div>
+    <div class="two-col">
+
+      <!-- SQL card -->
+      <div class="card">
+        <div class="card-hdr">
+          <span class="card-title">Fraud Rate by Transaction Category</span>
+          <span class="card-tag ct-sql">SQL Query</span>
+        </div>
+        <div class="card-body">
+          <div class="sql-box">
+            <span class="sql-kw">SELECT</span> category,<br>
+            &nbsp;&nbsp;<span class="sql-fn">COUNT</span>(*) <span class="sql-kw">AS</span> total_txns,<br>
+            &nbsp;&nbsp;<span class="sql-fn">ROUND</span>(<span class="sql-fn">AVG</span>(is_fraud) * 100, 2) <span class="sql-kw">AS</span> fraud_rate_pct,<br>
+            &nbsp;&nbsp;<span class="sql-fn">ROUND</span>(<span class="sql-fn">AVG</span>(amount), 2) <span class="sql-kw">AS</span> avg_amount<br>
+            <span class="sql-kw">FROM</span> <span class="sql-tbl">transactions</span><br>
+            <span class="sql-kw">GROUP BY</span> category<br>
+            <span class="sql-kw">ORDER BY</span> fraud_rate_pct <span class="sql-kw">DESC</span>
+          </div>
+          <table class="sql-table" id="fraud-table">
+            <thead>
+              <tr><th>Category</th><th>Total Txns</th><th>Fraud Rate</th><th>Avg Amount</th></tr>
+            </thead>
+            <tbody id="fraud-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DQ + Risk -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <!-- Data quality -->
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Data Quality Checks</span>
+            <span class="card-tag ct-etl">ETL</span>
+          </div>
+          <div class="card-body">
+            <div class="dq-grid" id="dq-grid"></div>
+          </div>
+        </div>
+
+        <!-- Risk distribution -->
+        <div class="card">
+          <div class="card-hdr">
+            <span class="card-title">Risk Score Distribution</span>
+            <span class="card-tag ct-ml">XGBoost</span>
+          </div>
+          <div class="card-body">
+            <div class="risk-gauge-row">
+              <div class="risk-cell low">
+                <span class="risk-emoji">🟢</span>
+                <div class="risk-label low">Low Risk</div>
+                <div class="risk-pct low">72.4%</div>
+                <div class="risk-sub">Score &lt; 0.30</div>
+              </div>
+              <div class="risk-cell med">
+                <span class="risk-emoji">🟡</span>
+                <div class="risk-label med">Medium</div>
+                <div class="risk-pct med">24.6%</div>
+                <div class="risk-sub">0.30 – 0.60</div>
+              </div>
+              <div class="risk-cell high">
+                <span class="risk-emoji">🔴</span>
+                <div class="risk-label high">High Risk</div>
+                <div class="risk-pct high">3.0%</div>
+                <div class="risk-sub">Score &gt; 0.60</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="three-col">
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Monthly Transaction Volume</span></div>
+        <div class="chart-wrap"><canvas id="c-monthly" height="180"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Fraud by Channel</span></div>
+        <div class="chart-wrap"><canvas id="c-channel" height="180"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-hdr"><span class="card-title">Feature Importance (Top 8)</span></div>
+        <div class="chart-wrap"><canvas id="c-fi" height="180"></canvas></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+</div><!-- /wrap -->
+
+<footer>
+  <div class="foot">
+    <div>
+      <div class="foot-name">Sara</div>
+      <div class="foot-sub">MSc Data Science · B.Tech Artificial Intelligence & Machine Learning · London</div>
+    </div>
+    <div class="foot-links">
+      <a href="#" class="foot-link">GitHub</a>
+      <a href="#" class="foot-link">Looker Studio</a>
+      <a href="#" class="foot-link">Colab</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Data ──────────────────────────────────────────────────
+const FRAUD_DATA = [
+  { cat:'travel',        txns:5124, rate:4.21, avg:487.30 },
+  { cat:'electronics',   txns:4980, rate:3.98, avg:412.60 },
+  { cat:'transfer',      txns:4870, rate:3.74, avg:632.10 },
+  { cat:'dining',        txns:5210, rate:2.88, avg:58.40  },
+  { cat:'entertainment', txns:4720, rate:2.64, avg:72.10  },
+  { cat:'fashion',       txns:4830, rate:2.31, avg:118.90 },
+  { cat:'healthcare',    txns:4690, rate:2.10, avg:145.20 },
+  { cat:'groceries',     txns:5340, rate:1.92, avg:47.80  },
+  { cat:'fuel',          txns:4980, rate:1.74, avg:68.30  },
+  { cat:'utilities',     txns:5250, rate:1.52, avg:92.40  },
+];
+
+const DQ_CHECKS = [
+  { name:'Null check — transaction_id', pass:true },
+  { name:'Null check — amount',         pass:true },
+  { name:'Null check — timestamp',      pass:true },
+  { name:'Null check — category',       pass:true },
+  { name:'Amount positive check',       pass:true },
+  { name:'Duplicate transaction IDs',   pass:true },
+  { name:'Valid category values',       pass:true },
+];
+
+// ── Populate fraud table ──
+const tbody = document.getElementById('fraud-tbody');
+FRAUD_DATA.forEach(d => {
+  const tr = document.createElement('tr');
+  const rateColor = d.rate > 3.5 ? 'td-neg' : d.rate > 2.5 ? '' : 'td-pos';
+  tr.innerHTML = `
+    <td>${d.cat}</td>
+    <td class="td-num">${d.txns.toLocaleString()}</td>
+    <td class="${rateColor}">${d.rate}%</td>
+    <td>£${d.avg}</td>`;
+  tbody.appendChild(tr);
+});
+
+// ── DQ checks ──
+const dqGrid = document.getElementById('dq-grid');
+DQ_CHECKS.forEach(c => {
+  const div = document.createElement('div');
+  div.className = 'dq-row';
+  div.innerHTML = `<span class="dq-name">${c.name}</span>
+    <span class="${c.pass ? 'dq-pass' : 'dq-fail'}">${c.pass ? '✅ PASS' : '❌ FAIL'}</span>`;
+  dqGrid.appendChild(div);
+});
+
+// ── Canvas charts ──────────────────────────────────────────
+function initCanvas(id, h) {
+  const el  = document.getElementById(id);
+  const dpr = window.devicePixelRatio || 1;
+  const W   = el.offsetWidth || 320;
+  const H   = h;
+  el.width  = W * dpr;
+  el.height = H * dpr;
+  const ctx = el.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, W, H };
+}
+
+// Monthly volume
+function drawMonthly() {
+  const { ctx, W, H } = initCanvas('c-monthly', 180);
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const vals   = [3800,3950,4200,4100,4350,4480,4250,4380,4520,4310,4180,3980];
+  const fraud  = [114, 119, 126, 123, 130, 134, 128, 131, 136, 129, 125, 119];
+  const pad = {t:16,b:36,l:10,r:10};
+  const cW  = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+  const maxV= Math.max(...vals)*1.1;
+  const bW  = cW/months.length*0.6;
+
+  months.forEach((m,i) => {
+    const x = pad.l + (i+0.5)*(cW/months.length) - bW/2;
+    const h = (vals[i]/maxV)*cH;
+    const y = pad.t+cH-h;
+
+    ctx.fillStyle = 'rgba(13,110,110,0.75)';
+    ctx.beginPath();
+    ctx.moveTo(x+3,y); ctx.lineTo(x+bW-3,y);
+    ctx.arcTo(x+bW,y,x+bW,y+3,3);
+    ctx.lineTo(x+bW,y+h); ctx.lineTo(x,y+h);
+    ctx.arcTo(x,y,x+3,y,3); ctx.closePath(); ctx.fill();
+
+    // Fraud overlay
+    const fh = (fraud[i]/maxV)*cH;
+    const fy = pad.t+cH-fh;
+    ctx.fillStyle='rgba(192,69,42,0.65)';
+    ctx.fillRect(x,fy,bW,fh);
+
+    if(i%3===0){
+      ctx.fillStyle='#8fa0b0';ctx.font='9px Fira Code';ctx.textAlign='center';
+      ctx.fillText(m,x+bW/2,H-pad.b+14);
+    }
+  });
+}
+
+// Channel fraud
+function drawChannel() {
+  const { ctx, W, H } = initCanvas('c-channel', 180);
+  const channels = ['Mobile','Web','ATM','Branch'];
+  const rates    = [3.8, 2.9, 2.4, 1.8];
+  const colors   = ['#0d6e6e','#1a9090','#5aaeae','#8fcece'];
+  const pad = {t:16,b:36,l:14,r:10};
+  const cW  = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+  const maxV= 5;
+  const bW  = cW/channels.length*0.58;
+
+  channels.forEach((ch,i) => {
+    const x = pad.l + (i+0.5)*(cW/channels.length) - bW/2;
+    const h = (rates[i]/maxV)*cH;
+    const y = pad.t+cH-h;
+    ctx.fillStyle = colors[i];
+    ctx.beginPath();
+    ctx.moveTo(x+3,y);ctx.lineTo(x+bW-3,y);
+    ctx.arcTo(x+bW,y,x+bW,y+3,3);
+    ctx.lineTo(x+bW,y+h);ctx.lineTo(x,y+h);
+    ctx.arcTo(x,y,x+3,y,3);ctx.closePath();ctx.fill();
+
+    ctx.fillStyle=colors[i];ctx.font='bold 10px Fira Code';ctx.textAlign='center';
+    ctx.fillText(rates[i]+'%',x+bW/2,y-5);
+
+    ctx.fillStyle='#8fa0b0';ctx.font='9px Fira Code';
+    ctx.fillText(ch,x+bW/2,H-pad.b+14);
+  });
+}
+
+// Feature importance
+function drawFI() {
+  const { ctx, W, H } = initCanvas('c-fi', 180);
+  const feats = ['amount','credit_score','amount_vs_avg','is_night','hour',
+                 'is_intl','acct_age','category'];
+  const vals  = [0.38,0.22,0.14,0.08,0.06,0.05,0.04,0.03];
+  const pad   = {t:10,b:10,l:84,r:36};
+  const cW    = W-pad.l-pad.r, cH = H-pad.t-pad.b;
+  const bH    = cH/feats.length*0.6;
+  const maxV  = 0.42;
+
+  feats.forEach((f,i) => {
+    const y = pad.t + i*(cH/feats.length) + (cH/feats.length - bH)/2;
+    const bw= (vals[i]/maxV)*cW;
+    const alpha = 0.4 + (1-i/feats.length)*0.55;
+    ctx.fillStyle=`rgba(13,110,110,${alpha})`;
+    ctx.beginPath();
+    ctx.moveTo(pad.l,y+3);ctx.arcTo(pad.l,y,pad.l+3,y,3);
+    ctx.lineTo(pad.l+bw-3,y);ctx.arcTo(pad.l+bw,y,pad.l+bw,y+3,3);
+    ctx.lineTo(pad.l+bw,y+bH-3);ctx.arcTo(pad.l+bw,y+bH,pad.l+bw-3,y+bH,3);
+    ctx.lineTo(pad.l,y+bH);ctx.closePath();ctx.fill();
+
+    ctx.fillStyle='#5a6e80';ctx.font='9px Fira Code';ctx.textAlign='right';
+    ctx.fillText(f,pad.l-6,y+bH/2+3);
+
+    ctx.fillStyle='#0d6e6e';ctx.font='bold 9px Fira Code';ctx.textAlign='left';
+    ctx.fillText((vals[i]*100).toFixed(0)+'%',pad.l+bw+5,y+bH/2+3);
+  });
+}
+
+window.addEventListener('load',()=>{ drawMonthly(); drawChannel(); drawFI(); });
+window.addEventListener('resize',()=>{ drawMonthly(); drawChannel(); drawFI(); });
+</script>
+</body>
+</html>
